@@ -15,24 +15,10 @@ function ensureInit(wasmSource?: WasmSource): Promise<void> {
   if (initPromise) return initPromise;
   initPromise = (async () => {
     try {
-      if (wasmSource) {
-        await initWasm(wasmSource);
-      } else {
-        // fs 分支只在 Node.js runtime 可用（本地开发回退）。
-        // edge runtime 下，调用方必须传入 wasmSource，否则直接拒绝。
-        const isNode =
-          typeof process !== 'undefined' &&
-          typeof process.versions === 'object' &&
-          typeof process.versions.node === 'string';
-        if (!isNode) {
-          throw new Error('wasmSource is required in non-Node runtime');
+        if (!wasmSource) {
+          throw new Error('wasmSource is required');
         }
-        const { readFileSync } = await import('fs');
-        const { join } = await import('path');
-        const wasmPath = join(process.cwd(), 'node_modules', '@resvg', 'resvg-wasm', 'index_bg.wasm');
-        const wasmBuffer = readFileSync(wasmPath);
-        await initWasm(wasmBuffer);
-      }
+        await initWasm(wasmSource);
     } catch (err) {
       // 失败时清掉缓存，下一次请求可以重试。
       initPromise = null;
