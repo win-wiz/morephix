@@ -10,6 +10,8 @@ import { parseSvg } from '@/lib/svg-pipeline/svg-parser';
 import { buildResvgOptions, type ConvertOptions } from '@/lib/svg-pipeline/options';
 import { BatchConverter, type BatchItem } from '@/lib/shared/batch';
 import { importSvgFromUrl, formatImportError } from '@/lib/shared/url-import';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { addHistoryRecord, type HistoryRecord } from '@/lib/shared/history-db';
 import {
   MAX_FILE_SIZE,
   MAX_REQUEST_BYTES,
@@ -43,7 +45,7 @@ function sameOptions(a: ConvertOptions, b: ConvertOptions): boolean {
 }
 
 export function ConverterApp() {
-  const [options, setOptions] = useState<ConvertOptions>(DEFAULT_OPTIONS);
+  const [options, setOptions] = useLocalStorage<ConvertOptions>('morephix_svg_options', DEFAULT_OPTIONS);
   const [items, setItems] = useState<BatchItem[]>([]);
   const [wasmReady, setWasmReady] = useState(false);
   const [wasmLoading, setWasmLoading] = useState(true);
@@ -102,6 +104,20 @@ export function ConverterApp() {
   const syncItems = useCallback(() => {
     setItems(converter.getItems());
   }, [converter]);
+
+  const saveToHistory = useCallback((item: BatchItem, opts: ConvertOptions) => {
+    const recordOptions = {
+      ...opts,
+      svgWidth: item.svgWidth ?? opts.svgWidth,
+      svgHeight: item.svgHeight ?? opts.svgHeight,
+    };
+    void addHistoryRecord({
+      fileName: item.fileName,
+      svgContent: item.svg,
+      byteSize: item.byteSize,
+      options: recordOptions,
+    });
+  }, []);
 
   // 生产-消费循环:处理直到 pending 队列被排空,期间新进来的 pending 也会被吃掉。
   const processQueue = useCallback(() => {
@@ -200,6 +216,9 @@ export function ConverterApp() {
               width,
               height,
             });
+            
+            // 成功后保存到历史记录
+            saveToHistory(item, opts);
           } catch (fallbackErr) {
             if (!isStale()) {
               const message =
@@ -224,6 +243,9 @@ export function ConverterApp() {
             width: result!.width,
             height: result!.height,
           });
+          
+          // 成功后保存到历史记录
+          saveToHistory(item, opts);
         }
         syncItems();
 
@@ -237,7 +259,7 @@ export function ConverterApp() {
     };
 
     runOne(first);
-  }, [syncItems, converter]);
+  }, [syncItems, converter, saveToHistory]);
 
   // 用第一个有真实尺寸的 item 驱动 AdvancedOptions 的锁定比例/预设基准。
   // 派生而非 setState,避免 effect 内 setState 触发级联渲染。
@@ -380,7 +402,7 @@ export function ConverterApp() {
       syncItems();
       processQueue();
     },
-    [options, syncItems, processQueue, converter]
+    [options, setOptions, syncItems, processQueue, converter]
   );
 
   const handleRemoveItem = useCallback(
@@ -402,7 +424,7 @@ export function ConverterApp() {
     setOptions(DEFAULT_OPTIONS);
     setBatchError(null);
     convertingRef.current = false;
-  }, [converter]);
+  }, [converter, setOptions]);
 
   const hasItems = items.length > 0;
   // 从 items 派生 progress,不能在 render 阶段读 converterRef.current(React 19 规则)。
@@ -413,6 +435,44 @@ export function ConverterApp() {
     }
     return counts;
   }, [items]);
+
+  const handleRestoreHistory = useCallback((record: HistoryRecord) => {
+    // 恢复配置
+    setOptions(record.options);
+    
+    // 清空现有队列，加入历史记录中的 SVG
+    converter.reset();
+    setItems([]);
+    setBatchError(null);
+    convertingRef.current = false;
+    
+    const { width, height } = parseSvg(record.svgContent);
+    converter.addFile({
+      fileName: record.fileName,
+      svg: record.svgContent,
+      byteSize: record.byteSize,
+      svgWidth: width,
+      svgHeight: height,
+    });
+    
+    syncItems();
+    processQueue();
+  }, [converter, setOptions, syncItems, processQueue]);
+
+  // 监听从 Header HistoryPanel 发出的恢复事件
+  useEffect(() => {
+    const handleRestoreEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<HistoryRecord>;
+      if (customEvent.detail) {
+        handleRestoreHistory(customEvent.detail);
+      }
+    };
+    
+    window.addEventListener('morephix:restore-history', handleRestoreEvent);
+    return () => {
+      window.removeEventListener('morephix:restore-history', handleRestoreEvent);
+    };
+  }, [handleRestoreHistory]);
 
   return (
     <div className="space-y-4">

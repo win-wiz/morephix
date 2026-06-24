@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // superpowers-zh skills (CommonJS scripts):
     ".claude/skills/**",
+    ".open-next/**",
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 

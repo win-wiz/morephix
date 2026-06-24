@@ -1,9 +1,15 @@
+'use client';
+
 import Link from 'next/link';
-import { SITE } from '@/lib/shared/tools';
+import { usePathname } from 'next/navigation';
 import { ToolsNav } from './header-nav/tools-nav';
 import { ThemeToggle } from './theme-toggle';
+import { HistoryPanel } from '@/components/svg-pipeline/history-panel';
 
 export function Header() {
+  const pathname = usePathname();
+  const isSvgToPng = pathname === '/svg-to-png' || pathname === '/';
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-20 items-center justify-between px-4 md:px-8">
@@ -61,15 +67,11 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          {/* 只有在 svg-to-png 页面才显示历史记录入口 */}
+          {isSvgToPng && (
+            <HistoryPanel />
+          )}
           <ThemeToggle />
-          {/* <a
-            href={SITE.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground transition-colors"
-          >
-            GitHub
-          </a> */}
         </div>
       </div>
     </header>
