@@ -1,4 +1,4 @@
-name = "svg-to-png"
+name = "morephix"
 main = ".open-next/worker.js"
 compatibility_date = "2025-05-20"
 compatibility_flags = ["nodejs_compat"]
