@@ -3,10 +3,6 @@ import { convertOnServer } from '@/lib/svg-pipeline/server';
 import { buildResvgOptions, ConvertOptions } from '@/lib/svg-pipeline/options';
 import { MAX_FILE_SIZE, MAX_REQUEST_BYTES } from '@/lib/shared/constants';
 
-// Cloudflare Workers / OpenNext 部署目标。
-// edge runtime 下不会打包 server.ts 的 fs 分支（动态 import + 守卫）。
-export const runtime = 'edge';
-
 function getWasmUrl(request: NextRequest): string {
   const url = new URL('/resvg.wasm', request.url);
   return url.href;
