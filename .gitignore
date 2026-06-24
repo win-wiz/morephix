@@ -1,0 +1,17 @@
+node_modules
+.next/
+out/
+build
+.env*.local
+.env
+*.db
+drizzle/
+.DS_Store
+*.log
+*.tsbuildinfo
+.superpowers/
+.claude/
+.omc/
+.open-next/
+.wrangler/
+docs/

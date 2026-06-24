@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Left Pillar -->
+  <rect x="5" y="4" width="3.5" height="16" rx="1.5" fill="#0f172a" />
+  <!-- Right Pillar -->
+  <rect x="15.5" y="4" width="3.5" height="16" rx="1.5" fill="#0f172a" />
+  <!-- Center Diamond (Gradient AI/Magic) -->
+  <defs>
+    <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#818cf8" />
+      <stop offset="100%" stopColor="#4f46e5" />
+    </linearGradient>
+  </defs>
+  <rect x="9" y="5.5" width="6" height="6" rx="1.5" fill="url(#magicGradient)" transform="rotate(45 12 8.5)" />
+</svg>
