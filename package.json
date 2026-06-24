@@ -6,6 +6,7 @@
     "dev": "next dev",
     "prebuild": "cp node_modules/@resvg/resvg-wasm/index_bg.wasm public/resvg.wasm",
     "build": "next build",
+    "build:cf": "npm run build && opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
