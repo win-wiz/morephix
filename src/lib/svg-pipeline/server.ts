@@ -18,7 +18,17 @@ function ensureInit(wasmSource?: WasmSource): Promise<void> {
         if (!wasmSource) {
           throw new Error('wasmSource is required');
         }
-        await initWasm(wasmSource);
+        let sourceToUse = wasmSource;
+        if (typeof wasmSource === 'string') {
+          // 在 Next.js 中直接传 URL 给 initWasm 会遇到 fetch Response 实例类型判断问题
+          // 因此我们手动 fetch 并转为 ArrayBuffer
+          const resp = await fetch(wasmSource);
+          if (!resp.ok) {
+            throw new Error(`Failed to fetch wasm from ${wasmSource}: ${resp.statusText}`);
+          }
+          sourceToUse = await resp.arrayBuffer();
+        }
+        await initWasm(sourceToUse);
     } catch (err) {
       // 失败时清掉缓存，下一次请求可以重试。
       initPromise = null;
